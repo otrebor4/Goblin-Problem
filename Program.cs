@@ -9,6 +9,7 @@ namespace Goblins
 
     public class Goblin
     {
+        public static int Comparations = 0;
         public Random seed;
         public bool TruthTeller;
 
@@ -28,26 +29,47 @@ namespace Goblins
         //false else
         public static bool Compare(Goblin A, Goblin B)
         {
+            Goblin.Comparations++;
             return A.GoblinCheck(B) && B.GoblinCheck(A);
+        }
+        public override string ToString()
+        {
+            return TruthTeller ? "Truth Teller" : "Deceiver";
         }
     }
 
 
     public class Test
     {
+        public static int SeedInt = -1;
         public FindTrueTeller _method;
-
+        public int NumT;
+        public int NumD;
         public Random seed;
         public List<Goblin> goblins;
 
+        public Test(int n)
+        {
+            int s = SeedInt != -1 ? SeedInt : (int)DateTime.Now.Ticks;
+            seed = new Random(s);
+            int nd = seed.Next(0, (n/2));
+            int nt = n - nd;
+            GenerateGoblins(nt, nd);
+        }
+
         public Test(int numt, int numd)
         {
-            seed = new Random((int)DateTime.Now.Ticks);
+            int s = SeedInt != -1 ? SeedInt : (int)DateTime.Now.Ticks;
+            seed = new Random(s);
             GenerateGoblins(numt,numd);
         }
 
         void GenerateGoblins(int numt, int numd)
         {
+            NumT = numt;
+            NumD = numd;
+
+            Goblin.Comparations = 0;
             goblins = new List<Goblin>();
             int n = numt + numd;
             while (goblins.Count < n)
@@ -82,6 +104,8 @@ namespace Goblins
 
     class Program
     {
+        static int Deep = 0;
+
         private class GoblinPair
         {
             public Goblin A;
@@ -100,15 +124,34 @@ namespace Goblins
 
         static void Main(string[] args)
         {
-            Test test =new Test(9999, 1);
-            test._method = Method;
-            Console.Out.WriteLine(test.FindGoblin().TruthTeller);
-            string s =Console.In.ReadLine();
+           
+            for (int i = 0; i < 1000; i++)
+            {
+                Console.Out.WriteLine("Test #:" + i);
+                Test test = new Test(100000);
+                test._method = Method;
+                Program.Deep = 0;
+                Goblin goblin = test.FindGoblin();
+                Console.Out.WriteLine("T / D: "+test.NumT +" / " + test.NumD); 
+                Console.Out.WriteLine("Goblins Comparations: "+ Goblin.Comparations);
+                Console.Out.WriteLine("Recursive Calls: "+ Program.Deep);
+                Console.Out.WriteLine("Goblin: " + goblin);
+                if (!goblin.TruthTeller)
+                {
+                    string d = Console.In.ReadLine();
+                }
+            }
+             
+            string s = Console.In.ReadLine();
         }
 
         public static Goblin Method(List<Goblin> goblins)
         {
-            Console.Out.WriteLine("Method");
+            if (goblins.Count == 1)
+                return goblins[0];
+            int id = 0;
+            int it = 0;
+            Deep++;
             List<Goblin> _new = new List<Goblin>();
             List<GoblinPair> pairs = new List<GoblinPair>();
             
@@ -135,10 +178,17 @@ namespace Goblins
                 if (pairs[i].Compare())
                 {
                     _new.Add(pairs[i].A);
+                    if (pairs[i].A.TruthTeller)
+                        it++;
+                    else
+                        id++;
                 }
             }
-            if(extra != null && IsEven(_new.Count))
-                return extra;
+
+            if (extra != null && IsEven(_new.Count))
+            {
+                _new.Add(extra);
+            }
             return Method(_new);
         }
 
